@@ -31,7 +31,7 @@ restore_stderr_stdout()
     exec 11>&1- 12>&2-     
 }
 
-options=$(getopt -a -n "$(basename $0)" -l "target:,help,verbose" -- "t:hvd" "$@")
+options=$(getopt -a -n "$(basename $0)" -l "target:,help,verbose" -- "t:hv" "$@")
 
 if [ $? -ne 0 ]; then
     usage
