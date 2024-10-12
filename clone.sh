@@ -74,15 +74,16 @@ fi
 
 while read -r line
 do
+    #echo $line
+    lang=$( echo "$line" | cut -d' ' -f1)
+    url=$( echo "$line" | cut -d' ' -f2)
     cd "$target"
-    lang=$( echo "$line" | cut -f1)
-    url=$( echo "$line" | cut -f2)
     if [ ! -d "$lang" ]; then
         mkdir $([[ $verbose = 1 ]] && echo "-v") "$lang"
     fi
     cd "$lang"
     git clone "$url"
-done < <(python clone.py)
+done < <(TOKEN=$TOKEN php clone.php)
 
 if [[ $verbose -eq 1 ]]; then
     restore_stderr_stdout
