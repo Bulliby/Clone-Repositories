@@ -10,10 +10,26 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'X-GitHub-Api-Version: 2022-11-28'
 ]);
 
-$json = curl_exec($ch);
+if(!$json = curl_exec($ch))
+{
+    trigger_error(curl_error($ch));
+}
 
-$data = json_decode($json, true);
+$data = json_decode($json);
+
+if (!$data) {
+    throw new \Exception('Json formating error');
+}
+
+$status = (!is_array($data) && $data->status) ? $data->status : null;
+
+if ($status && $status != 200) {
+    printf("%d %s\n", $data->status, $data->message);
+    exit(1);
+}
 
 foreach($data as $repo) {
-    echo (empty($repo['language']) ? 'Unknown' : $repo['language']) . ' ' . $repo['ssh_url'] . PHP_EOL;
+    printf("%s|%s\n", $repo->language ?? 'Unknown', $repo->ssh_url);
 }
+
+exit(0);

@@ -21,16 +21,6 @@ UsagePrint
 exit $E_BADARGS
 }
 
-close_stderr_stdout()
-{
-    exec 11>&1 12>&2 1>&- 2>&-     
-}
-
-restore_stderr_stdout()
-{
-    exec 11>&1- 12>&2-     
-}
-
 options=$(getopt -a -n "$(basename $0)" -l "target:,help,verbose" -- "t:hv" "$@")
 
 if [ $? -ne 0 ]; then
@@ -43,19 +33,12 @@ while [ ! -z "$1" ]
 do
     case "$1" in
         -t) target="$2"; shift ;;
-        -v) verbose=1 ;;
         -h) usage ;;
         --target) target="$2"; shift ;;
         --help) usage ;;
-        --verbose) verbose=1 ;;
     esac
     shift
 done
-
-v=""
-if [[ $verbose ]]; then
-    v="v"
-fi
 
 if [ -z $target ]; then
     echo "Target path is manadatory"
@@ -67,25 +50,34 @@ if [ ! -d $target ]; then
     exit $E_BADLOCATION
 fi
 
-if [[ $verbose -eq 0 ]]; then
-    close_stderr_stdout
+if [ -z $TOKEN ];then
+    echo "You need a Github token TOKEN='mysecret' bash clone.sh"
+    exit $E_BADARGS
 fi
 
+api_result=$(TOKEN=$TOKEN php clone.php)
 
-while read -r line
+if [[ $? -ne 0 ]]; then
+    echo $api_result
+    exit 1
+fi
+
+TOKEN=$TOKEN php clone.php | while read -r line
 do
-    #echo $line
-    lang=$( echo "$line" | cut -d' ' -f1)
-    url=$( echo "$line" | cut -d' ' -f2)
+    lang=$(echo "$line" | cut -d'|' -f1)
+    url=$(echo "$line" | cut -d'|' -f2)
+
     cd "$target"
+
     if [ ! -d "$lang" ]; then
         mkdir $([[ $verbose = 1 ]] && echo "-v") "$lang"
     fi
+
     cd "$lang"
     git clone "$url"
-done < <(TOKEN=$TOKEN php clone.php)
+done
 
-if [[ $verbose -eq 1 ]]; then
-    restore_stderr_stdout
+if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    echo "Erreur script PHP"
+    exit 1
 fi
-
